@@ -1,0 +1,35 @@
+{
+  "name": "凡人修仙傳：Emoji 仙途",
+  "short_name": "Emoji仙途",
+  "description": "以凡人修仙傳為背景的第一人稱 Emoji 秘境冒險 RPG",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#16120b",
+  "theme_color": "#16120b",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "games"
+  ]
+}
