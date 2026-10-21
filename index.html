@@ -118,6 +118,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   </div>
 </div>
 <script src="./three.min.js"></script>
+<script src="./jspdf.umd.min.js"></script>
+<script src="https://js.puter.com/v2/"></script>
 <script>
 const $=s=>document.querySelector(s),r=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),rm=(a,o)=>{const i=a.indexOf(o);if(i>=0)a.splice(i,1)},pick1=a=>a[r(0,a.length-1)],clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const DIRS=[[0,-1],[1,0],[0,1],[-1,0]],DN=['北','東','南','西'];
@@ -127,8 +129,9 @@ const K=(n,f)=>n+':'+(f||1);
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v);return true}catch(e){return false}};
 let asT,pt=null,camp=[],campSp=[],campKey=null,ret=null,inv=[],g,W,H,mons,items,npcs,vis,P,world,theme,area,FL=1,party,pool,combat,gold,camps,bonus,over,menu,done={},AR={},logs=[];
 let cons,keys=0,quest=null,offers=null,dex={},ach={},ng=0,bless=0,won=false,stock=[],kills=0,qdone=0,deep={dungeon:1,tower:1};
+let novel=[],nev={},npend=[],nvBusy=0;
 const DF={easy:{n:'煉氣（簡單）',h:.75,a:.8,r:1},normal:{n:'築基（普通）',h:1,a:1,r:1},hard:{n:'結丹（困難）',h:1.3,a:1.2,r:1.25},nightmare:{n:'心魔劫（全滅即結束）',h:1.7,a:1.45,r:1.6}};
-let set={sfx:1,mus:1,diff:'normal',seen:0};try{Object.assign(set,JSON.parse(lsGet('fr_set')||'null')||{})}catch(e){}
+let set={sfx:1,mus:1,diff:'normal',seen:0,nvLive:1};try{Object.assign(set,JSON.parse(lsGet('fr_set')||'null')||{})}catch(e){}
 if(!DF[set.diff])set.diff='normal';
 const view=$('#view'),renderer=new THREE.WebGLRenderer({canvas:$('#gl'),antialias:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
@@ -260,7 +263,7 @@ function build(name,sv,fl){fl=fl||1;
     if(name==='forest'){if(!sv){addItem(W-2,H-2,'dungeon');addItem(W-2,1,'tower')}addNpc(1,1,null,'🚪',()=>{go('village','s');say('🏘️ 穿過山門，回到坊市。')},1,1);addNpc(2,1,'💂',null,()=>menuOpen('💂 守山弟子：萬妖林很危險，要回坊市嗎？',[['🏘️ 回坊市',()=>{closeMenu();go('village','s');say('🏘️ 守山弟子替你開啟山門，回到坊市。')}]]),2,1,1)}}
   if(t.pl)curve(t);AR[K(name,fl)]={g,W,H,world,mons,items,npcs,vis,mod,nm:name,fl}}
 function startP(name){if(name==='village')return{x:5,y:6,d:2};if(name==='forest')return{x:3,y:1,d:3};let d=1;for(let k=0;k<4;k++)if(!g[1+DIRS[k][1]][1+DIRS[k][0]]){d=k;break}return{x:1,y:1,d}}
-function go(name,pos,fl){fl=fl||1;
+function go(name,pos,fl){fl=fl||1;const from=area;
   if(name==='village')ret=null;
   if(area)AR[K(area,FL)].P={...P};if(world)scene.remove(world);
   const key=K(name,fl);if(!AR[key])build(name,null,fl);
@@ -268,12 +271,12 @@ function go(name,pos,fl){fl=fl||1;
   if(name==='village')genStock();
   scene.background=new THREE.Color(theme.bg);scene.fog=new THREE.Fog(theme.bg,...theme.fog);amb.intensity=theme.amb;
   P=pos==='s'?startP(name):pos||AR[key].P;
-  tgt.x=vx=P.x;tgt.z=vz=P.y;tgt.a=-P.d*Math.PI/2;camera.rotation.y=tgt.a;placeCam();reveal();ui()}
+  tgt.x=vx=P.x;tgt.z=vz=P.y;tgt.a=-P.d*Math.PI/2;camera.rotation.y=tgt.a;placeCam();reveal();ui();nvTrack(name,fl);if(name==='village'&&from&&from!=='village')nvAuto()}
 function genStock(){const t=Math.min(3,Math.floor(avgLv()/6));stock=[];for(let i=0;i<3;i++){const it=mkItem(Math.min(4,t+(Math.random()<.25?1:0)));it.pr=60+it.tier*80+r(0,20);stock.push(it)}}
 function resetWorld(){pt=null;camp=camp||[];campSp=[];campKey=null;over=false;combat=null;menu=false;done={};AR={};logs=[];area=null;FL=1;ret=null;deep={dungeon:1,tower:1};quest=null;offers=null;won=false;bless=0;keys=0;
   if(world){scene.remove(world);world=null}$('#end').hidden=true;$('#menu').hidden=true}
 function newGame(){
-  resetWorld();camp=[];gold=100;camps=2;bonus=0;cons={potion:2,ether:0,herb:1,scroll:0};dex={};ach={};ng=0;kills=0;qdone=0;inv=[];
+  resetWorld();camp=[];gold=100;camps=2;bonus=0;cons={potion:2,ether:0,herb:1,scroll:0};dex={};ach={};ng=0;kills=0;qdone=0;inv=[];novel=[];nev={};npend=[];
   const all=CH();party=all.slice(0,2).map(t=>mkChar(t,1));pool=all.slice(2).map(t=>{const c=mkChar(t,1);c.fresh=1;return c});
   go('village',{x:5,y:4,d:0});say('🏘️ 黃楓坊市。你們都是資質平庸的凡人，卻想賭一把仙緣。先到 🍺 結伴酒樓邀請道友，再從 🌲 踏入萬妖林。🌀 縮地術可隨時返回坊市。')}
 function newGamePlus(){
@@ -315,7 +318,7 @@ const statTxt=it=>{const f=ef(it);return[f.atk&&'攻+'+f.atk,f.def&&'防+'+f.def
 const itemTxt=it=>`${TI[it.tier]}${it.e} ${it.up?'+'+it.up+' ':''}${it.n}（${statTxt(it)}）`;
 const sellVal=it=>10+it.tier*15+(it.up||0)*25;
 let lootLog=[];
-function giveItem(it){if(inv.length>=INV){const v=sellVal(it);gold+=v;say(`🎒 儲物袋已滿，${itemTxt(it)} 直接出售（+${v}💰）`);lootLog.push(`${TI[it.tier]}${it.n}（已賣）`)}else{it.new=1;inv.push(it);say(`🎁 獲得 ${itemTxt(it)}`);lootLog.push(`${TI[it.tier]}${it.e}${it.up?'+'+it.up:''}${it.n}`)}}
+function giveItem(it){nvLoot(it);if(inv.length>=INV){const v=sellVal(it);gold+=v;say(`🎒 儲物袋已滿，${itemTxt(it)} 直接出售（+${v}💰）`);lootLog.push(`${TI[it.tier]}${it.n}（已賣）`)}else{it.new=1;inv.push(it);say(`🎁 獲得 ${itemTxt(it)}`);lootLog.push(`${TI[it.tier]}${it.e}${it.up?'+'+it.up:''}${it.n}`)}}
 function flushLoot(){if(lootLog.length)toast('🎁 掉落：'+lootLog.join('、'));lootLog=[]}
 function loot(f,boss,rich){const n=boss?2:Math.random()<(f.lead?.55:.35)?1:0;for(let i=0;i<n;i++){const q=r(1,100)+Math.floor(f.xp/3)+(boss?40:0)+FL*2+(rich?20:0),t=Math.max(q<65?0:q<90?1:q<110?2:q<130?3:4,boss?3:0);giveItem(mkItem(t))}}
 
@@ -341,7 +344,7 @@ function shop(){const w=100+bonus*40,rows=[[`⛺ 聚靈旗 30💰（現有 ${cam
 function temple(){const all=party.concat(camp),dead=all.filter(p=>!p.hp).length,c=20+30*dead;
   menuOpen('⛪ 回春堂',[[`🙏 丹藥療傷並復活全員（含洞府留守者）${c}💰`,()=>buy(c,()=>all.forEach(p=>{p.dn=0;p.hp=p.mhp;p.mp=p.mmp;p.st={}}),temple),gold<c]])}
 function tavern(){const rows=[],full=party.length>=8;
-  pool.forEach(c=>rows.push([`${c.e} 邀請${c.n}${c.fresh?'':' Lv'+c.lv}（${(CLS[c.n]||[])[0]}…）${c.cost}💰`,()=>{if(full||gold<c.cost)return;gold-=c.cost;rm(pool,c);if(c.fresh){delete c.fresh;setLv(c,Math.max(1,avgLv()-1))}party.push(c);sfx('coin');ui();tavern()},full||gold<c.cost]));
+  pool.forEach(c=>rows.push([`${c.e} 邀請${c.n}${c.fresh?'':' Lv'+c.lv}（${(CLS[c.n]||[])[0]}…）${c.cost}💰`,()=>{if(full||gold<c.cost)return;gold-=c.cost;nt1('hire',c.n);rm(pool,c);if(c.fresh){delete c.fresh;setLv(c,Math.max(1,avgLv()-1))}party.push(c);sfx('coin');ui();tavern()},full||gold<c.cost]));
   party.forEach((c,i)=>rows.push([`👋 辭別 ${c.e}${c.n} Lv${c.lv}`,()=>{if(party.length<2)return;party.splice(i,1);for(const k in c.eq)if(c.eq[k]){inv.push(c.eq[k]);c.eq[k]=null}recalc(c);pool.push(c);ui();tavern()},party.length<2]));
   menuOpen(`🍺 結伴酒樓（隊伍 ${party.length}/8）`,rows)}
 function campMenu(){const rows=[],lab=c=>`${c.hp?c.e:'💀'} ${c.n} Lv${c.lv}　❤️${c.hp}/${c.mhp}　🔷${c.mp}/${c.mmp}`;
@@ -351,7 +354,7 @@ function campMenu(){const rows=[],lab=c=>`${c.hp?c.e:'💀'} ${c.n} Lv${c.lv}　
 function forge(){const rows=[];party.forEach(p=>SL.forEach(s=>{const it=p.eq[s[0]];if(it)rows.push([`${p.e}${p.n}　${itemTxt(it)}`,()=>forgeItem(it)])}));
   inv.slice().sort((a,b)=>b.tier-a.tier||(b.up||0)-(a.up||0)).slice(0,12).forEach(it=>rows.push([`🎒 ${itemTxt(it)}`,()=>forgeItem(it)]));
   menuOpen(`⚒️ 煉器坊<br><small>強化最高 +10；重鑄可重新抽取套裝屬性</small>`,rows)}
-function forgeItem(it){const up=it.up||0,c=Math.round(30*(1+up)*(1+it.tier*.6)),rc=60+it.tier*60,rows=[[`🔨 強化 +${up} → +${up+1}　${c}💰`,()=>buy(c,()=>{it.up=up+1;recalcAll()},()=>forgeItem(it)),up>=10||gold<c]];
+function forgeItem(it){const up=it.up||0,c=Math.round(30*(1+up)*(1+it.tier*.6)),rc=60+it.tier*60,rows=[[`🔨 強化 +${up} → +${up+1}　${c}💰`,()=>buy(c,()=>{it.up=up+1;nt('forge');recalcAll()},()=>forgeItem(it)),up>=10||gold<c]];
   if(it.tier>=1)rows.push([`🔁 重鑄套裝屬性　${rc}💰`,()=>buy(rc,()=>{it.set=Math.random()<.2?undefined:pick1(Object.keys(SETS));it.n=itName(it);recalcAll()},()=>forgeItem(it)),gold<rc]);
   rows.push(['↩️ 返回',forge]);menuOpen(`⚒️ ${itemTxt(it)}`,rows)}
 function bagMenu(){
@@ -480,12 +483,12 @@ function act(t){
   else if(t==='def'){a.guard=1;a.mp=Math.min(a.mmp,a.mp+2);say(`🛡️ ${a.n} 運起護體靈氣（受傷減半，靈力+2）。`);sfx('click');afterAct()}
   else if(t==='item'){itemMenu(true)}
   else if(t==='run'){const sp=alive(party).reduce((s,p)=>s+p.sp,0)/alive(party).length,fs=combat.foes.reduce((s,f)=>s+f.spd,0)/combat.foes.length,boss=combat.foes.some(f=>f.boss);
-    if(Math.random()<(boss?.25:clamp(.4+(sp-fs)*.05,.15,.85))){combat.foes.forEach(f=>{if(f.s)f.s.visible=true});combat=null;say('🏃 成功遁走。');ui()}else{say('🏃 遁走失敗！');afterAct()}}}
+    if(Math.random()<(boss?.25:clamp(.4+(sp-fs)*.05,.15,.85))){combat.foes.forEach(f=>{if(f.s)f.s.visible=true});combat=null;nt('flee');say('🏃 成功遁走。');ui()}else{say('🏃 遁走失敗！');afterAct()}}}
 function victory(){
   const c=combat,foes=c.foes,rich=AR[K(area,FL)]&&AR[K(area,FL)].mod,df=dfc();
   const gm=(rich==='rich'?1.5:1)*df.r*(1+.25*ng);let gg=0,xpT=0;
   foes.forEach(f=>{gg+=Math.round((r(10,25)+f.mhp)*gm);xpT+=Math.round(f.mhp*(rich==='elite'?1.3:1)*(1+.15*ng))});
-  gold+=gg;sfx('win');
+  gold+=gg;sfx('win');nvKill(foes,gg);
   foes.forEach(f=>{dex[f.n]=dex[f.n]||{s:1,k:0};dex[f.n].k++;kills++;if(quest&&quest.t==='kill'&&quest.tg===f.n&&quest.have<quest.n)quest.have++;
     if(!f.tmp){rm(mons,f);if(f.s)world.remove(f.s)}});
   say(`🎉 擊敗 ${foes.map(f=>f.n).join('、')}，獲得 ${gg} 靈石、每人 ${xpT} 點修為。`);
@@ -500,11 +503,12 @@ function victory(){
   combat=null;
   if(boss){done[area]=1;addItem(boss.x,boss.y,'down');say(`👑 ${boss.n} 倒下！出現了通往下一層的 🪜。`)}
   checkAch();
-  if(boss&&done.dungeon&&done.tower&&!won){won=true;endScreen('win','🏆 大道可期！',`血色禁地的妖王與虛天殿的魔頭都已伏誅，你們帶著 ${gold} 靈石凱旋，修為更上一層樓。但亂星海的暗流仍在湧動，秘境深處還藏著更多機緣……`);return}
-  ui()}
+  if(boss&&done.dungeon&&done.tower&&!won){won=true;nt('win');nvAuto(true,1);endScreen('win','🏆 大道可期！',`血色禁地的妖王與虛天殿的魔頭都已伏誅，你們帶著 ${gold} 靈石凱旋，修為更上一層樓。但亂星海的暗流仍在湧動，秘境深處還藏著更多機緣……`);return}
+  nvLiveCheck();ui()}
 function gainXp(p,n){p.xp+=n;while(p.lv<LVMAX&&p.xp>=need(p.lv)){p.xp-=need(p.lv);const t=tpl(p.n);p.lv++;p.bmhp+=t.gh;p.bmmp+=t.gm;recalc(p);p.hp=Math.min(p.mhp,p.hp+t.gh+4);p.mp=Math.min(p.mmp,p.mp+t.gm);
-    say(`⭐ ${p.n} 修為精進，升到 Lv${p.lv}！`);const ns=(CLS[p.n]||[]).find(k=>SKD[k].lv===p.lv);if(ns)say(`📖 ${p.n} 領悟了新神通「${ns}」！`);sfx('level')}if(p.lv>=LVMAX)p.xp=0}
+    say(`⭐ ${p.n} 修為精進，升到 Lv${p.lv}！`);nvLv(p);const ns=(CLS[p.n]||[]).find(k=>SKD[k].lv===p.lv);if(ns)say(`📖 ${p.n} 領悟了新神通「${ns}」！`);sfx('level')}if(p.lv>=LVMAX)p.xp=0}
 function defeat(){
+  nt('defeat');
   const foes=combat?combat.foes:[];foes.forEach(f=>{if(f.s)f.s.visible=true});combat=null;
   if(set.diff==='nightmare'){endScreen('perma','💀 身死道消','心魔劫難度下，仙途到此為止。你可以讀取先前的存檔。');return}
   const pct=set.diff==='easy'?.15:.3,loss=Math.floor(gold*pct);
@@ -556,7 +560,7 @@ const qTxt=q=>q.t==='kill'?`討伐 ${q.tg} ×${q.n}`:`抵達${NM[q.ar]}第 ${q.n
 const qProg=q=>q.t==='kill'?q.have:Math.min(q.n,deep[q.ar]);
 function questMenu(){
   if(quest){const p=qProg(quest),ok=p>=quest.n;menuOpen(`📋 宗門任務堂<br><small>進行中：${qTxt(quest)}（${p}/${quest.n}）　獎勵 ${quest.rew}💰＋裝備</small>`,
-    [[ok?'✅ 領取獎勵':'尚未完成',()=>{gold+=quest.rew;giveItem(mkItem(Math.min(4,quest.tier+(Math.random()<.3?1:0))));qdone++;quest=null;offers=null;sfx('coin');say('📋 任務完成！');flushLoot();checkAch();ui();questMenu()},!ok],['❌ 放棄任務',()=>{quest=null;questMenu()}]]);return}
+    [[ok?'✅ 領取獎勵':'尚未完成',()=>{gold+=quest.rew;giveItem(mkItem(Math.min(4,quest.tier+(Math.random()<.3?1:0))));qdone++;nt1('quests',qTxt(quest));quest=null;offers=null;sfx('coin');say('📋 任務完成！');flushLoot();checkAch();ui();questMenu()},!ok],['❌ 放棄任務',()=>{quest=null;questMenu()}]]);return}
   if(!offers)offers=genOffers();
   menuOpen('📋 宗門任務堂（接取一個任務）',offers.map(q=>[`${qTxt(q)}　獎勵 ${q.rew}💰＋裝備`,()=>{quest=q;offers=null;questMenu()}]))}
 const ACH=[['first','🩸','初陣','擊敗第一隻妖獸',()=>kills>=1],['k100','⚔️','百戰','累計擊敗 100 隻妖獸',()=>kills>=100],['k500','🏴','千軍','累計擊敗 500 隻妖獸',()=>kills>=500],
@@ -576,9 +580,10 @@ const HELP=['📜 故事：天南越國，修士如雲，而你們只是資質�
  '📈 成長：每位角色各自升級，並在 Lv4/7/11 等領悟新神通。留守洞府的角色不會得到修為。',
  '🪜 秘境：血色禁地與虛天殿的 🪜 通往下一層，每 5 層有守關強者。越深越強，掉落也越好。📦寶箱可能是噬寶妖，🔑破禁符可開🧰，⚠️禁制陷阱隱藏在地上。',
  '⚒️ 煉器坊可強化與重鑄裝備；📋宗門任務堂接任務；🧙傳送陣可直達已到過的深層；🌀縮地術可隨時返回坊市。',
+ '📜 小說：冒險途中累積足夠的事件，Puter AI 會即時把旅程寫成連載小說的一集；回到坊市時也會成章（📖手冊 → 📜 修仙小說，或按 N 鍵）。第一次需登入 Puter；可閱讀、匯出 MD／HTML／TXT／PDF 摺頁小冊。',
  '💾 進度會自動存檔，也可手動存檔或匯出檔案。']; 
 function helpMenu(p){p=p||0;menuOpen(`❓ 說明 (${p+1}/${HELP.length})`,[[HELP[p],()=>{}],...(p<HELP.length-1?[['➡️ 下一頁',()=>helpMenu(p+1)]]:[]),...(p>0?[['⬅️ 上一頁',()=>helpMenu(p-1)]]:[])].concat([['↩️ 返回',bookMenu]]))}
-function bookMenu(){menuOpen('📖 修仙手冊',[['📖 妖獸圖鑑',dexMenu],['🏅 成就',achMenu],['❓ 故事與說明',()=>helpMenu(0)]])}
+function bookMenu(){menuOpen('📖 修仙手冊',[['📜 修仙小說（AI 即時寫成連載）',nvMenu],['📖 妖獸圖鑑',dexMenu],['🏅 成就',achMenu],['❓ 故事與說明',()=>helpMenu(0)]])}
 function saveSet(){lsSet('fr_set',JSON.stringify(set))}
 function setMenu(){menuOpen('⚙️ 設定',[[`🔊 音效：${set.sfx?'開':'關'}`,()=>{set.sfx=set.sfx?0:1;saveSet();setMenu()}],[`🎵 音樂：${set.mus?'開':'關'}`,()=>{set.mus=set.mus?0:1;saveSet();setMenu()}],
   [`⚔️ 難度：${dfc().n}（只影響之後新生成的樓層）`,()=>{const ks=Object.keys(DF);set.diff=ks[(ks.indexOf(set.diff)+1)%ks.length];saveSet();setMenu()}],['❓ 說明',()=>helpMenu(0)],...(isStandalone()?[]:[['📲 安裝到裝置（離線也能玩）',installApp]])])}
@@ -605,9 +610,9 @@ function move(rel){
   else ui()}
 function say2(t){say(t)}
 function interact(it){
-  if(it.k==='lchest'){if(keys<1){say('🔒 被禁制封住的寶箱，需要 🔑 破禁符。');return}keys--;sfx('chest');const t=Math.min(4,2+(Math.random()<.35?1:0)+(FL>=10?1:0)),g2=r(60,120)+FL*10;gold+=g2;say(`🧰 破開禁制，打開了寶箱！獲得 ${g2} 靈石。`);giveItem(mkItem(t));if(Math.random()<.5){cons.scroll++;say('📜 還有一張還魂符！')}flushLoot();world.remove(it.s);rm(items,it);checkAch();ui()}
+  if(it.k==='lchest'){if(keys<1){say('🔒 被禁制封住的寶箱，需要 🔑 破禁符。');return}keys--;sfx('chest');const t=Math.min(4,2+(Math.random()<.35?1:0)+(FL>=10?1:0)),g2=r(60,120)+FL*10;gold+=g2;nt('chest');say(`🧰 破開禁制，打開了寶箱！獲得 ${g2} 靈石。`);giveItem(mkItem(t));if(Math.random()<.5){cons.scroll++;say('📜 還有一張還魂符！')}flushLoot();world.remove(it.s);rm(items,it);checkAch();ui()}
   else if(it.k==='shrine')shrineMenu(it);else if(it.k==='merchant')merchMenu(it)}
-function shrineMenu(it){const use=f=>{f();world.remove(it.s);rm(items,it);closeMenu()};
+function shrineMenu(it){const use=f=>{nt('shrine');f();world.remove(it.s);rm(items,it);closeMenu()};
   menuOpen('⛩️ 古修士遺留的祭壇',[['🙏 獻上 50💰：全隊恢復 30% 氣血',()=>use(()=>{gold-=50;alive(party).forEach(p=>p.hp=Math.min(p.mhp,p.hp+Math.ceil(p.mhp*.3)));say('🙏 祭壇的靈光治癒了你們。')}),gold<50],
    ['✨ 獻上 100💰：道韻加持（接下來 5 場戰鬥傷害 +25%）',()=>use(()=>{gold-=100;bless=5;say('✨ 你們得到了古修士道韻的加持。')}),gold<100],
    ['🎲 空手參悟：可能有所頓悟，也可能走火入魔',()=>use(()=>{if(Math.random()<.5){party.forEach(p=>{if(p.hp)p.mp=p.mmp});say('🔷 頓悟之下靈力充盈，全隊靈力全滿！')}else{alive(party).forEach(p=>p.st.poison=3);say('☠️ 走火入魔，全隊中毒了！')}})]])}
@@ -618,22 +623,22 @@ function merchMenu(it){if(!it.stock){it.stock=[];for(let i=0;i<2;i++){const e=mk
   menuOpen('🧔 雲遊散修',rows)}
 function pick(it){
   if(it.k==='dungeon'||it.k==='tower'){go(it.k,'s',1);say(`${it.e} 你們踏入${NM[it.k]}第 1 層。${it.k==='dungeon'?'血腥味撲面而來，禁地深處似有妖王沉睡。':'陰風陣陣，殿中魔氣翻湧。'}走回入口可離開。`);return}
-  if(it.k==='down'){const nf=FL+1;deep[area]=Math.max(deep[area]||1,nf);go(area,'s',nf);say(`🪜 來到${NM[area]}第 ${nf} 層。`);const md=AR[K(area,nf)].mod;if(md)say(`${MODS[md][0]}：${MODS[md][1]}`);if(nf%5===0)say('⚠️ 這一層有守關強者的氣息……');checkAch();return}
+  if(it.k==='down'){const nf=FL+1;deep[area]=Math.max(deep[area]||1,nf);nt('down');go(area,'s',nf);say(`🪜 來到${NM[area]}第 ${nf} 層。`);const md=AR[K(area,nf)].mod;if(md)say(`${MODS[md][0]}：${MODS[md][1]}`);if(nf%5===0)say('⚠️ 這一層有守關強者的氣息……');checkAch();return}
   if(it.k==='gold'){const n=Math.round(r(20,50)*(1+.1*FL)*(AR[K(area,FL)].mod==='rich'?1.5:1));gold+=n;sfx('coin');say(`💎 拾得 ${n} 靈石。`)}
   if(it.k==='potion'){party.forEach(p=>{if(p.hp)p.hp=Math.min(p.mhp,p.hp+20)});say('🧪 服下路邊的靈藥，全隊恢復 20 點氣血。')}
-  if(it.k==='fountain'){party.forEach(p=>{if(!p.hp){p.hp=Math.ceil(p.mhp/2);p.dn=0}else p.hp=p.mhp;p.mp=p.mmp;p.st={}});sfx('heal');say('⛲ 靈泉讓全隊完全恢復，倒下的道友復活了！')}
-  if(it.k==='key'){keys++;sfx('chest');say('🔑 撿到一枚破禁符。')}
+  if(it.k==='fountain'){nt('fountain');party.forEach(p=>{if(!p.hp){p.hp=Math.ceil(p.mhp/2);p.dn=0}else p.hp=p.mhp;p.mp=p.mmp;p.st={}});sfx('heal');say('⛲ 靈泉讓全隊完全恢復，倒下的道友復活了！')}
+  if(it.k==='key'){nt('key');keys++;sfx('chest');say('🔑 撿到一枚破禁符。')}
   if(it.k==='chest'){world.remove(it.s);rm(items,it);
     if(Math.random()<.12+FL*.005){const tp=MIMIC,fm=fmul(FL,null),mm=addMon(it.x,it.y,tp[0],tp[1],Math.round(tp[2]*fm.h),Math.round(tp[3]*fm.a),tp[4],tp[5]);say('📦 這寶箱是噬寶妖所化！');startCombat(mm);return}
-    sfx('chest');const g2=Math.round(r(30,80)*(1+.1*FL));gold+=g2;say(`📦 打開寶箱，獲得 ${g2} 靈石。`);if(Math.random()<.6)giveItem(mkItem(Math.min(4,r(0,1)+Math.floor(FL/5))));if(Math.random()<.3){cons.potion++;say('🧪 還有一枚回春丹。')}flushLoot();checkAch();ui();return}
-  if(it.k==='trap'){it.s.visible=true;sfx('trap');if(Math.random()<.6){const d=Math.max(3,Math.ceil(alive(party).reduce((s,p)=>s+p.mhp,0)/alive(party).length*.08));party.forEach(p=>{if(p.hp)p.hp=Math.max(1,p.hp-d)});say(`⚠️ 觸發禁制陷阱！全隊受到 ${d} 點傷害。`)}else{alive(party).forEach(p=>p.st.poison=3);say('⚠️ 毒瘴禁制！全隊中毒了。')}}
+    sfx('chest');const g2=Math.round(r(30,80)*(1+.1*FL));gold+=g2;nt('chest');say(`📦 打開寶箱，獲得 ${g2} 靈石。`);if(Math.random()<.6)giveItem(mkItem(Math.min(4,r(0,1)+Math.floor(FL/5))));if(Math.random()<.3){cons.potion++;say('🧪 還有一枚回春丹。')}flushLoot();checkAch();ui();return}
+  if(it.k==='trap'){nt('trap');it.s.visible=true;sfx('trap');if(Math.random()<.6){const d=Math.max(3,Math.ceil(alive(party).reduce((s,p)=>s+p.mhp,0)/alive(party).length*.08));party.forEach(p=>{if(p.hp)p.hp=Math.max(1,p.hp-d)});say(`⚠️ 觸發禁制陷阱！全隊受到 ${d} 點傷害。`)}else{alive(party).forEach(p=>p.st.poison=3);say('⚠️ 毒瘴禁制！全隊中毒了。')}}
   world.remove(it.s);rm(items,it);
   if(it.k!=='key')ui();else ui()}
-function rest(){if(over||combat||menu)return;if(!camps){say('⛺ 沒有聚靈旗了，可到百寶閣購買。');return}camps--;
+function rest(){if(over||combat||menu)return;if(!camps){say('⛺ 沒有聚靈旗了，可到百寶閣購買。');return}camps--;nt('rest');
   party.forEach(p=>{p.st={};if(p.hp){p.hp=Math.min(p.mhp,p.hp+Math.ceil(p.mhp*.4));p.mp=Math.min(p.mmp,p.mp+Math.ceil(p.mmp*.4))}});sfx('heal');say('💤 佈下聚靈旗打坐調息，恢復了氣血與靈力。')}
 function portal(){if(over||combat||menu)return;if(area==='village'){say('你已經在坊市了。');return}
   const c=party.filter(p=>p.hp&&p.mp>=6).sort((a,b)=>b.mp-a.mp)[0];if(!c){say('🌀 縮地術需要 6 點靈力。');return}
-  c.mp-=6;const back={area,P:{...P},fl:FL};go('village',{x:5,y:6,d:3});ret=back;say(`🌀 ${c.n} 施展縮地術，回到了坊市。面前的 🌀 傳送點可回到剛才的位置。`)}
+  c.mp-=6;nt('portal');const back={area,P:{...P},fl:FL};go('village',{x:5,y:6,d:3});ret=back;say(`🌀 ${c.n} 施展縮地術，回到了坊市。面前的 🌀 傳送點可回到剛才的位置。`)}
 function backTo(){const q=ret;ret=null;go(q.area,q.P,q.fl);say(`🌀 傳送回先前的${NM[q.area]}${q.area==='dungeon'||q.area==='tower'?'第 '+q.fl+' 層':''}。`)}
 function syncPortal(t){if(ret&&!pt){const s=sprite('🌀',.9);world.add(s);const o={x:4,y:6,f:backTo,fx:4,fy:6,t0:-1e4,nx:1e9,fl:1,home:[4,6],s:null,st:1};npcs.push(o);pt={s,o}}
   else if(!ret&&pt){world.remove(pt.s);rm(npcs,pt.o);pt=null}
@@ -717,16 +722,16 @@ function ui(){
 const AUTO='fr_auto1',SLOT=i=>'fr_s1_'+i;
 function snap(){AR[K(area,FL)].P={...P};const areas={};
   for(const k in AR){const a=AR[k];areas[k]=a.nm==='village'?{nm:'village',fl:1,P:a.P}:{nm:a.nm,fl:a.fl,g:a.g,vis:a.vis,P:a.P,mod:a.mod,mons:a.mons.map(m=>({x:m.x,y:m.y,e:m.e,n:m.n,hp:m.hp,mhp:m.mhp,atk:m.atk,spd:m.spd,sp:m.sp,boss:!!m.boss})),items:a.items.map(i=>({x:i.x,y:i.y,k:i.k,stock:i.stock}))}}
-  return{v:2,t:Date.now(),gold,camps,bonus,cons,keys,quest,offers,deep,done,won,bless,dex,ach,kills,qdone,ng,inv,party,pool,camp,ret,area,fl:FL,areas,logs:logs.slice(-4)}}
+  return{v:2,t:Date.now(),gold,camps,bonus,cons,keys,quest,offers,deep,done,won,bless,dex,ach,kills,qdone,ng,inv,party,pool,camp,ret,area,fl:FL,areas,logs:logs.slice(-4),novel,nev,npend}}
 const summary=d=>`${NM[d.area]}${d.fl>1?' 第'+d.fl+'層':''} 隊伍${d.party.length}+${d.camp.length} 💰${d.gold}　${new Date(d.t).toLocaleString('zh-TW',{hour12:false})}`;
 function valid(d){return d&&d.v===2&&Array.isArray(d.party)&&d.party.length&&Array.isArray(d.pool)&&Array.isArray(d.camp)&&Array.isArray(d.inv)&&d.areas&&d.areas[K(d.area,d.fl)]&&d.areas['village:1']&&NM[d.area]&&d.cons&&d.deep}
 function applySave(d){
   if(!valid(d))throw new Error('bad');
   resetWorld();
-  ({gold,camps,bonus,cons,keys,quest,offers,deep,done,won,bless,dex,ach,kills,qdone,ng,inv,party,pool,camp}=d);keys=keys||0;bless=bless||0;
+  ({gold,camps,bonus,cons,keys,quest,offers,deep,done,won,bless,dex,ach,kills,qdone,ng,inv,party,pool,camp}=d);keys=keys||0;bless=bless||0;novel=d.novel||[];nev=d.nev||{};npend=d.npend||[];
   logs=d.logs||[];
   for(const k in d.areas){const a=d.areas[k];build(a.nm,a.nm==='village'?null:a,a.fl);AR[k].P=a.P}
-  go(d.area,AR[K(d.area,d.fl)].P,d.fl);ret=d.ret||null;recalcAll();say('📂 已讀取存檔。')}
+  go(d.area,AR[K(d.area,d.fl)].P,d.fl);ret=d.ret||null;recalcAll();say('📂 已讀取存檔。');if(npend.length)nvRun()}
 function loadSlot(k){const raw=lsGet(k);if(!raw){say('沒有存檔。');return}try{applySave(JSON.parse(raw))}catch(e){console.error(e);say('❌ 存檔損毀，無法讀取。')}}
 function saveSlot(i){const ok=lsSet(SLOT(i),JSON.stringify(snap()));say(ok?`💾 已存入欄位 ${i}。`:'❌ 瀏覽器不允許儲存，請改用「匯出存檔檔案」。');saveMenu()}
 function autosave(){if(combat||menu||over||!area||!party)return;lsSet(AUTO,JSON.stringify(snap()))}
@@ -740,15 +745,188 @@ function saveMenu(){const rows=[],sm=raw=>{try{return raw?summary(JSON.parse(raw
 // ===== 輸入 =====
 function cycTgt(){if(!combat||combat.lock)return;const n=combat.foes.length;for(let k=1;k<=n;k++){const i=(combat.tg+k)%n;if(combat.foes[i].hp>0){combat.tg=i;break}}ui()}
 const A={f:()=>move('f'),b:()=>move('b'),l:()=>move('l'),r:()=>move('r'),tl:()=>turn(-1),tr:()=>turn(1),rest,tp:portal,save:()=>{if(over||combat||menu)return;saveMenu()},bag:()=>{if(over||combat||menu)return;bagMenu()},book:()=>{if(over||combat||menu)return;bookMenu()},set:()=>{if(over||combat||menu)return;setMenu()},
-  atk:()=>act('atk'),sk:()=>act('sk'),def:()=>act('def'),item:()=>act('item'),run:()=>act('run'),tgt:cycTgt};
+  atk:()=>act('atk'),sk:()=>act('sk'),def:()=>act('def'),item:()=>act('item'),run:()=>act('run'),tgt:cycTgt,nv:()=>{if(over||combat||menu)return;try{if(window.puter&&!puter.auth.isSignedIn())puter.auth.signIn().catch(()=>{})}catch(e){}nvMenu()}};
 $('#ctrl').addEventListener('click',e=>{cancelWalk();const b=e.target.closest('button');if(b&&A[b.dataset.k])A[b.dataset.k]()});
 $('#foes').addEventListener('click',e=>{const d=e.target.closest('.fo');if(!d||!combat||combat.lock)return;const i=+d.dataset.f;if(combat.foes[i].hp>0){combat.tg=i;sfx('click');ui()}});
 $('#again').onclick=()=>{if(confirm('開始全新的遊戲？（自動存檔會在下次行動時被覆蓋）'))newGame()};$('#ld').onclick=()=>loadSlot(AUTO);$('#cont').onclick=endContinue;$('#ngp').onclick=()=>{newGamePlus()};
 $('#imp').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;f.text().then(t=>{try{applySave(JSON.parse(t))}catch(x){say('❌ 匯入失敗：不是有效的存檔檔案。')}})};
 const fsb=$('#fs'),de=document.documentElement;if(!de.requestFullscreen&&!de.webkitRequestFullscreen)fsb.hidden=true;
 fsb.onclick=()=>{if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document);else(de.requestFullscreen||de.webkitRequestFullscreen).call(de)};
-const KM={w:'f',arrowup:'f',s:'b',arrowdown:'b',a:'tl',arrowleft:'tl',d:'tr',arrowright:'tr',q:'l',e:'r',r:'rest',t:'tp',p:'save',i:'bag',m:'book',o:'set',x:'tgt',tab:'tgt','1':'atk','2':'sk','3':'def','4':'item','5':'run'};
+const KM={w:'f',arrowup:'f',s:'b',arrowdown:'b',a:'tl',arrowleft:'tl',d:'tr',arrowright:'tr',q:'l',e:'r',r:'rest',t:'tp',p:'save',i:'bag',m:'book',n:'nv',o:'set',x:'tgt',tab:'tgt','1':'atk','2':'sk','3':'def','4':'item','5':'run'};
 addEventListener('keydown',e=>{if(e.key==='Escape'&&menu){closeMenu();return}const k=KM[e.key.toLowerCase()];if(k){e.preventDefault();cancelWalk();A[k]()}});
+
+// ===== 冒險小說（Puter AI 寫作）=====
+const NVT='凡人仙途紀',NVL=8,NVN={體修:'石磊',佛修:'慧明',法修:'雲澈',劍修:'凌霜',散修:'夜無痕',武修:'洪烈',丹師:'白蘇',音修:'柳如煙'};
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nt=(k,n)=>{nev[k]=(nev[k]||0)+(n||1)},nt1=(k,v)=>{(nev[k]=nev[k]||[]).push(v)};
+const nvNm=p=>NVN[p.n]||p.n;
+// --- 事件記錄 ---
+function nvTrack(name,fl){if(name==='village')return;const p=(nev.pl=nev.pl||{}),q=p[name];if(!q)p[name]=[fl,fl];else{q[0]=Math.min(q[0],fl);q[1]=Math.max(q[1],fl)}}
+function nvKill(foes,gg){nev.gold=(nev.gold||0)+gg;const km=(nev.km=nev.km||{});foes.forEach(f=>{km[f.n]=(km[f.n]||0)+1;if(f.boss)nt1('boss',f.n)})}
+function nvLoot(it){nev.loot=(nev.loot||0)+1;if(!nev.bt||it.tier>nev.bt[0])nev.bt=[it.tier,(it.up?'+'+it.up+' ':'')+it.n]}
+function nvLv(p){nt1('lvup',nvNm(p)+'升到 Lv'+p.lv)}
+const nvAct=ev=>Object.values(ev.km||{}).reduce((a,b)=>a+b,0)+3*(ev.boss||[]).length+2*(ev.down||0)+2*(ev.quests||[]).length+3*(ev.defeat||0)+(ev.chest||0)+(ev.win?5:0);
+function nvPlaces(ev){return Object.entries(ev.pl||{}).map(([a,[lo,hi]])=>NM[a]+(a==='dungeon'||a==='tower'?(lo===hi?(lo>1?'第'+lo+'層':''):'第'+lo+'–'+hi+'層'):'')).join('、')}
+function nvLiveCheck(){if(set.nvLive&&area&&area!=='village'&&nvAct(nev)>=NVL)nvAuto(true,1)}
+function nvAuto(force,live){const ev=nev;if(!force&&nvAct(ev)<3)return;nev={};if(area&&area!=='village')nvTrack(area,FL);
+  ev.pt=party.map(p=>({n:p.n,lv:p.lv}));ev.alv=avgLv();ev.ng=ng;ev.live=live?1:0;ev.loc=NM[area]+(area==='dungeon'||area==='tower'?'第'+FL+'層':'');
+  let best=null;party.forEach(p=>Object.values(p.eq).forEach(it=>{if(it&&(!best||it.tier>best.tier||(it.tier===best.tier&&(it.up||0)>(best.up||0))))best=it}));ev.gear=best?(best.up?'+'+best.up+' ':'')+best.n:'';
+  npend.push(ev);nvRun()}
+// --- 提示詞與 AI ---
+function nvFacts(ev){const L=[],km=Object.entries(ev.km||{}).map(([k,v])=>k+'×'+v);
+  L.push('小隊成員：'+(ev.pt||[]).map(p=>NVN[p.n]+'（'+p.n+' Lv'+p.lv+'）').join('、'));
+  L.push('活動地點：'+(nvPlaces(ev)||'黃楓坊市周邊'));
+  L.push('擊敗妖獸：'+(km.join('、')||'無'));
+  if((ev.boss||[]).length)L.push('強敵之戰：擊倒 '+ev.boss.join('、'));
+  if(ev.down)L.push('向更深一層秘境推進 '+ev.down+' 次');
+  if(ev.chest||ev.key)L.push('開啟寶箱 '+(ev.chest||0)+' 個'+(ev.key?'，找到破禁符 '+ev.key+' 枚':''));
+  if(ev.trap)L.push('觸發禁制陷阱 '+ev.trap+' 次');
+  if(ev.fountain)L.push('在靈泉旁完全恢復 '+ev.fountain+' 次');
+  if(ev.shrine)L.push('在古修士遺留的祭壇前獻祭或參悟 '+ev.shrine+' 次');
+  if(ev.bt&&ev.bt[0]>=1)L.push('最珍貴的收穫：'+TI[ev.bt[0]]+' '+ev.bt[1]);
+  if(ev.gear)L.push('隊伍最強的裝備：'+ev.gear);
+  if((ev.lvup||[]).length)L.push('成長：'+ev.lvup.slice(-6).join('、'));
+  if((ev.hire||[]).length)L.push('新道友加入：'+ev.hire.map(n=>NVN[n]+'（'+n+'）').join('、'));
+  if((ev.quests||[]).length)L.push('完成的宗門任務：'+ev.quests.join('、'));
+  if(ev.forge)L.push('在煉器坊強化裝備 '+ev.forge+' 次');
+  if(ev.rest)L.push('佈下聚靈旗打坐調息 '+ev.rest+' 次');
+  if(ev.portal)L.push('使用縮地術撤回坊市 '+ev.portal+' 次');
+  if(ev.flee)L.push('成功遁走 '+ev.flee+' 次');
+  if(ev.defeat)L.push('全員重傷一次，被路過的前輩救回坊市（損失靈石）');
+  if(ev.win)L.push('血色禁地與虛天殿的守關強者都已倒下，但亂星海的暗流仍在湧動');
+  if(ev.ng)L.push('這是第 '+(ev.ng+1)+' 周目（輪迴轉世），妖獸比從前更強');
+  if(ev.gold)L.push('本段旅程獲得靈石 '+ev.gold);
+  return L.join('\n')}
+function nvPrompt(n,ev,prev){const pv=(prev||[]).map(c=>'第 '+c.n+' 集《'+c.title+'》：'+c.text.slice(0,200)).join('\n'),
+  pos=ev.live?'【本集定位】這集寫於冒險途中，小隊此刻仍身處「'+(ev.loc||'秘境')+'」，尚未返回坊市；結尾停在當下的處境並留下懸念，不要寫成已經回到坊市。\n':'【本集定位】這是一趟旅程的完整一集，結尾小隊回到黃楓坊市休整，並留下下一集的伏筆。\n';
+  return '你是仙俠長篇小說作者，正在連載原創作品《'+NVT+'》，故事借用「凡人修仙傳」的修仙世界氛圍，現在撰寫「第 '+n+' 集」。\n'+
+  '【世界觀】天南越國，修士如雲，而小隊是一群資質平庸、靠機緣與彼此扶持前行的凡人。黃楓坊市是修士與凡人交易、結伴的據點；坊外是妖獸出沒的萬妖林，更遠處有妖王沉睡的血色禁地、魔氣翻湧的虛天殿，以及一層比一層深、沒有盡頭的秘境。小隊由體修、佛修、法修、劍修、散修、武修、丹師、音修輪替組成，以靈力、飛劍、丹藥、符籙與神通對抗妖獸與魔修。\n'+
+  '【文風】第三人稱敘事，沉穩內斂，帶有凡人逆天的堅韌與步步為營的謹慎，動作場面具體，對話自然。使用繁體中文，650 到 900 字，分成 5 至 8 個段落。\n'+
+  '【人物】直接使用「本集紀錄」中的角色名字稱呼隊員，並讓每位出場的隊員有符合其職業的行動；妖獸以遊戲中的名稱稱呼，地名以遊戲中的區域名稱為準。人物與情節皆為原創，不要使用原著中的人物，也不要照搬原著的情節。\n'+
+  '【內容】原創情節，把本集紀錄裡的每一項事件自然融入故事，與前情銜接。\n'+pos+
+  '【格式】第一行是標題（10 個字以內，不加符號與集數），空一行後接正文，正文只有純文字段落。\n'+
+  '【前情】'+(pv||'（開篇：小隊第一次踏出黃楓坊市）')+'\n【本集紀錄】\n'+nvFacts(ev)}
+const nvSigned=()=>{try{return !!(window.puter&&puter.auth.isSignedIn())}catch(e){return false}};
+async function nvGen(prompt){
+  if(!nvSigned())return null;
+  const r=await Promise.race([puter.ai.chat(prompt,{model:'claude-sonnet-4-5'}),new Promise((_,j)=>setTimeout(()=>j(new Error('timeout')),120000))]);
+  const t=typeof r==='string'?r:(r&&r.message&&r.message.content&&r.message.content[0]&&r.message.content[0].text)||(r&&r.text)||(r&&r.message&&typeof r.message.content==='string'&&r.message.content)||'';
+  const ls=String(t).trim().split('\n'),ti=ls[0].replace(/^[#\s*《「第\d集：:・\-]+/,'').replace(/[》」*]+$/,'').slice(0,24),bd=ls.slice(1).join('\n').trim();
+  return bd.length>150?{title:ti||'無題',text:bd}:null}
+function nvFallback(n,ev){const pt=ev.pt||[],lead=pt[0]?NVN[pt[0].n]:'修士',mates=pt.slice(1).map(p=>NVN[p.n]).join('、'),pl=nvPlaces(ev)||'黃楓坊市周邊',a=[];
+  const km=Object.entries(ev.km||{}),tot=km.reduce((s,[,v])=>s+v,0);
+  a.push(ev.live?'第 '+n+' 段記事，'+lead+'帶著'+(mates?mates+'等道友':'行囊')+'仍在'+(ev.loc||pl)+'中前行。凡人修仙，靠的不是天賦，而是一步一步走出來的謹慎與運氣。':'第 '+n+' 次出發的清晨，'+lead+'帶著'+(mates?mates+'等道友':'行囊')+'離開黃楓坊市，前往'+pl+'。行囊裡裝著回春丹與聚靈旗，心裡裝著一點不肯認命的倔強。');
+  if(tot)a.push('一路上，小隊與妖獸交手 '+tot+' 次。'+km.map(([k,v])=>k+' '+v+' 隻').join('、')+'先後倒在隊伍的飛劍與神通之下，每一場戰鬥都讓道友之間的默契更深。');
+  if((ev.boss||[]).length)a.push('最凶險的一戰發生在深處：'+ev.boss.join('、')+'擋住去路。小隊咬牙撐過猛攻，終於在最後一擊中將其斬落，空氣裡只剩下喘息聲。');
+  if(ev.down)a.push('他們踏著石階走向更深的一層，'+ev.down+' 次向未知推進，腳步聲在秘境中迴盪。');
+  if(ev.chest||ev.trap||ev.fountain||ev.shrine)a.push('秘境裡處處是機緣與禁制：'+[ev.chest&&'開啟了 '+ev.chest+' 個寶箱',ev.trap&&'觸發 '+ev.trap+' 次禁制陷阱',ev.fountain&&'在靈泉旁重整旗鼓',ev.shrine&&'向古修士的祭壇低聲參悟'].filter(Boolean).join('，')+'。');
+  if(ev.bt&&ev.bt[0]>=1)a.push('儲物袋裡多了一件'+TI[ev.bt[0]]+'「'+ev.bt[1]+'」，在靈光下閃著微光。');
+  if((ev.lvup||[]).length)a.push(ev.lvup.slice(-4).join('，')+'，一次次苦修換來了實實在在的修為精進。');
+  if((ev.quests||[]).length)a.push('宗門任務堂的委託也一一辦妥：'+ev.quests.join('、')+'。');
+  if((ev.hire||[]).length)a.push('結伴酒樓裡，新道友'+ev.hire.map(k=>NVN[k]).join('、')+'舉杯加入，隊伍的故事多了新的一頁。');
+  if(ev.defeat)a.push('只是這一次，黑暗佔了上風。小隊重傷倒地，被路過的前輩救回坊市，醒來時只剩一身傷痕與不甘。');
+  if(ev.win)a.push('當最後一位守關強者倒下，血色禁地與虛天殿終於歸於平靜。可是亂星海的暗流仍在湧動，像在等待下一批不肯認命的凡人。');
+  a.push(ev.live?lead+'抹去嘴角的血跡，望向'+(ev.loc||'秘境')+'更深處，知道真正的考驗還在前頭。':'回到黃楓坊市時，夕陽正落在屋簷上。'+lead+'在手札上寫下新的一行，知道明天還有更深的路要走。');
+  return{title:(Object.keys(ev.pl||{}).map(k=>NM[k])[0]||'坊市')+'之行',text:a.join('\n\n')}}
+// --- 寫作佇列 ---
+async function nvWrite(ev){const n=novel.length+1;toast('✍️ 正在把這段旅程寫成小說…');
+  let r=null,ai=false;try{r=await nvGen(nvPrompt(n,ev,novel.slice(-2)));if(r)ai=true}catch(e){console.warn('Puter 寫作失敗',e)}
+  if(!r)r=nvFallback(n,ev);
+  novel.push({n,title:r.title,text:r.text,area:nvPlaces(ev)||'黃楓坊市周邊',lv:ev.alv||1,date:new Date().toISOString().slice(0,10),ai,ev});
+  toast('📜 第 '+n+' 集《'+r.title+'》已寫入小說'+(ai?'':'（離線範本，可至小說選單用 AI 重寫）'));say('📜 第 '+n+' 集《'+r.title+'》已寫入小說。')}
+async function nvRun(){if(nvBusy)return;nvBusy=1;try{while(npend.length){try{await nvWrite(npend[0])}catch(e){console.error(e)}npend.shift();ui()}}finally{nvBusy=0}}
+// --- 選單 ---
+function nvSignIn(){if(!window.puter){say('⚠️ Puter 尚未載入，請確認網路後重新整理。');return}
+  puter.auth.signIn().then(()=>{toast('🔑 Puter 已登入');nvMenu()}).catch(()=>{say('Puter 登入已取消。');nvMenu()})}
+function nvMenu(){const act=nvAct(nev);
+  menuOpen(`📜 冒險小說《${NVT}》<br><small>共 ${novel.length} 集${npend.length?'　✍️ 撰寫中 '+npend.length+' 集':''}。回到坊市，或（即時模式）在冒險途中事件累積滿 ${NVL} 分，旅程就會由 AI 寫成新的一集。目前累積的事件分數：${act}</small>`,[
+    [`📖 閱讀小說（${novel.length} 集）`,()=>nvReader(),!novel.length],
+    ['✍️ 立即把目前的冒險寫成一集',()=>{if(nvAct(nev)<1){say('還沒有足夠的冒險可以寫成小說。');return}nvAuto(true,area!=='village');closeMenu();say('✍️ 已排入寫作。')},act<1],
+    [`⏱️ 寫作時機：${set.nvLive?'即時（冒險途中累積 '+NVL+' 分就寫）':'只在回坊市時'}`,()=>{set.nvLive=set.nvLive?0:1;saveSet();nvMenu()}],
+    ['📤 匯出小說（MD／HTML／PDF 摺頁小冊）',()=>nvExport(),!novel.length],
+    [`🔑 Puter AI：${nvSigned()?'已登入 ✅':'未登入（點此登入，才能用 AI 寫作）'}`,nvSignIn,nvSigned()],
+    ['🗑️ 清空小說',()=>{if(confirm('確定刪除全部章節？此動作無法復原。')){novel=[];ui();nvMenu()}},!novel.length],
+    ['↩️ 返回手冊',bookMenu]])}
+let nvI=0;
+function nvReader(i){if(!novel.length){nvMenu();return}
+  nvI=i==null?novel.length-1:clamp(i,0,novel.length-1);const c=novel[nvI];
+  menuOpen(`<b>第 ${c.n} 集：${esc(c.title)}</b> <small>（${nvI+1}/${novel.length}）${c.ai?'':'｜範本'}</small>`,[
+    ['⬅️ 上一集',()=>nvReader(nvI-1),nvI<=0],['➡️ 下一集',()=>nvReader(nvI+1),nvI>=novel.length-1],
+    [c.ev?'🔁 用 AI 重寫本集':'🔁 無法重寫（缺少紀錄）',()=>nvRewrite(nvI),!c.ev],
+    ['📤 匯出',nvExport],['↩️ 返回小說選單',nvMenu]]);
+  const d=$('#menu').firstElementChild,t=document.createElement('div');
+  t.style.cssText='max-height:46vh;overflow-y:auto;white-space:pre-wrap;line-height:1.85;font-size:14px;user-select:text;-webkit-user-select:text;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg)';
+  t.innerHTML='<div style="font-size:12px;opacity:.7;margin-bottom:6px">區域：'+esc(c.area||'—')+'｜平均等級 Lv'+esc(c.lv||'—')+'｜'+esc(c.date||'—')+'</div>'+esc(c.text);
+  d.insertBefore(t,d.children[2])}
+async function nvRewrite(i){const c=novel[i];if(!c||!c.ev)return;
+  if(!nvSigned()){if(!window.puter){say('⚠️ Puter 尚未載入，請確認網路。');return}try{await puter.auth.signIn()}catch(e){say('Puter 登入已取消。');return}}
+  if(nvBusy){say('正在寫作中，請稍候。');return}nvBusy=1;closeMenu();toast('✍️ AI 正在重寫第 '+c.n+' 集…');
+  try{const r=await nvGen(nvPrompt(c.n,c.ev,novel.slice(Math.max(0,i-2),i)));
+    if(r){c.title=r.title;c.text=r.text;c.ai=true;toast('📜 第 '+c.n+' 集已重寫')}else toast('❌ 重寫失敗，保留原稿')}
+  catch(e){console.warn(e);toast('❌ 重寫失敗，保留原稿')}
+  nvBusy=0;ui();nvReader(i)}
+// --- 匯出 ---
+async function nvSave(name,data){const b=data instanceof Blob?data:new Blob([data],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+const nvChapMd=c=>'## 第 '+c.n+' 集：'+c.title+'\n\n*區域：'+(c.area||'未知')+'｜平均等級：Lv'+(c.lv||'—')+'｜'+(c.date||'—')+'*\n\n'+c.text+'\n';
+const nvLead=()=>party&&party[0]?NVN[party[0].n]+'的小隊':'冒險小隊';
+function nvBookMd(){return '# '+NVT+'\n\n> '+nvLead()+'｜共 '+novel.length+' 集\n\n**目錄**\n\n'+novel.map(c=>'- 第 '+c.n+' 集：'+c.title).join('\n')+'\n\n---\n\n'+novel.map(nvChapMd).join('\n---\n\n')}
+function nvEbook(){const img=nvShots.length?nvShots[Math.floor(Math.random()*nvShots.length)]:'',
+  toc=novel.map(c=>'<li><a href="#c'+c.n+'">第 '+c.n+' 集：'+esc(c.title)+'</a></li>').join(''),
+  body=novel.map(c=>'<article id="c'+c.n+'"><h2>第 '+c.n+' 集：'+esc(c.title)+'</h2><p class="meta">區域：'+esc(c.area||'未知')+'｜平均等級：Lv'+esc(c.lv||'—')+'｜'+esc(c.date||'—')+'</p>'+esc(c.text).split(/\n+/).map(t=>'<p>'+t+'</p>').join('')+'</article>').join('');
+  return '<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>'+NVT+'</title><style>:root{--bg:#f6f0e0;--fg:#2a2114;--ac:#b5780b}@media(prefers-color-scheme:dark){:root{--bg:#16120b;--fg:#eadcb8;--ac:#e6b24a}}body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.9 "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}main{max-width:36em;margin:0 auto;padding:0 1.2em 4em}header img{width:100%;max-height:50vh;object-fit:cover;display:block}h1{margin:.6em 0 .2em;font-size:2em}h2{color:var(--ac);margin-top:2.4em;border-top:1px solid #8884;padding-top:1em}nav a{color:var(--ac)}p{text-indent:2em;margin:.6em 0}p.meta{text-indent:0;font-size:.8em;opacity:.7}@media print{header img{max-height:30vh}}</style></head><body><header>'+(img?'<img alt="" src="'+img+'">':'')+'</header><main><h1>'+NVT+'</h1><p class="meta">'+esc(nvLead())+'｜共 '+novel.length+' 集</p><nav><ol>'+toc+'</ol></nav>'+body+'</main></body></html>'}
+function nvExport(){if(!novel.length){say('尚無章節可匯出。');return}
+  menuOpen('<b>匯出小說</b><br><small>章節格式：「## 第 N 集：標題」，附區域、等級、日期。</small>',[
+    ['1. 純 MD 檔',()=>nvSave(NVT+'.md',nvBookMd())],['2. HTML 電子書',()=>nvSave(NVT+'電子書.html',nvEbook())],
+    ['3. 純文字 TXT',()=>nvSave(NVT+'.txt',novel.map(c=>'第 '+c.n+' 集　'+c.title+'\n\n'+c.text).join('\n\n————\n\n'))],
+    ['4. A4 摺頁小冊 PDF（橫向單面，一張紙折成 8 頁）',nvPdf],['↩️ 返回',()=>nvReader(nvI)]])}
+// --- 遊戲截圖（電子書與 PDF 封面）---
+let wantShot=false,nvShots=[];try{nvShots=JSON.parse(lsGet('fr_shots')||'[]')}catch(e){}
+function nvShot(){wantShot=false;try{const c=document.createElement('canvas'),rd=renderer.domElement,w=960,h=Math.round(w*rd.height/rd.width);c.width=w;c.height=h;c.getContext('2d').drawImage(rd,0,0,w,h);nvShots.push(c.toDataURL('image/jpeg',.7));if(nvShots.length>8)nvShots.splice(Math.floor(Math.random()*nvShots.length),1);if(!lsSet('fr_shots',JSON.stringify(nvShots)))nvShots.splice(0,3)}catch(e){}}
+setInterval(()=>{if(area&&!combat&&!menu&&!over&&!document.hidden)wantShot=true},25000);
+setTimeout(()=>{if(area&&!combat&&!menu&&!over)wantShot=true},4000);
+// --- A4 摺頁小冊 PDF ---
+const nvLi=src=>new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src});
+const PW=1240,PH=1754,PM=120,PF='"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+async function nvCover(title,sub,src){const cv=document.createElement('canvas');cv.width=PW;cv.height=PH;const x=cv.getContext('2d'),im=src&&await nvLi(src);
+  if(im){const k=Math.max(PW/im.width,PH/im.height),w=im.width*k,h=im.height*k;x.drawImage(im,(PW-w)/2,(PH-h)/2,w,h)}else{const g=x.createLinearGradient(0,0,0,PH);g.addColorStop(0,'#5a4220');g.addColorStop(1,'#16120b');x.fillStyle=g;x.fillRect(0,0,PW,PH)}
+  const g=x.createLinearGradient(0,PH*.4,0,PH);g.addColorStop(0,'#0000');g.addColorStop(1,'#000c');x.fillStyle=g;x.fillRect(0,PH*.4,PW,PH*.6);
+  x.fillStyle='#fff';x.textAlign='center';x.font='bold 130px '+PF;x.fillText(title,PW/2,PH-340);x.font='40px '+PF;sub.forEach((t,i)=>x.fillText(t,PW/2,PH-250+i*62));return cv}
+async function nvPdf(){const J=window.jspdf&&window.jspdf.jsPDF;if(!J){say('PDF 元件未載入，請重新整理後再試。');return}
+  const L=novel,SC=.6,pm=100,pg=[];let cv=null,cx,y,chs=[],curN=0;toast('🖨️ 正在排版摺頁小冊…');await new Promise(r=>setTimeout(r,50));
+  const fin=()=>{if(cv)pg.push({u:cv.toDataURL('image/jpeg',.9),ch:chs})};
+  const np=()=>{fin();cv=document.createElement('canvas');cv.width=Math.round(PW*SC);cv.height=Math.round(PH*SC);cx=cv.getContext('2d');cx.scale(SC,SC);cx.fillStyle='#f6f0e0';cx.fillRect(0,0,PW,PH);chs=curN?[curN]:[];y=pm+30};
+  const putT=(t,f,lh,col,gap)=>{cx.font=f;cx.fillStyle=col;const ln=[];let a='';for(const ch of t){if(cx.measureText(a+ch).width>PW-2*pm&&a){ln.push(a);a=ch}else a+=ch}if(a)ln.push(a);for(const l of ln){if(y+lh>PH-pm-30){np();cx.font=f;cx.fillStyle=col}cx.fillText(l,pm,y);y+=lh}y+=gap};
+  np();cx.textAlign='left';
+  for(const c of L){curN=c.n;if(y>PH-pm-320)np();cx.textAlign='left';if(!chs.includes(curN))chs.push(curN);
+    putT('第 '+c.n+' 集：'+c.title,'bold 58px '+PF,92,'#b5780b',4);putT('區域：'+(c.area||'未知')+'｜Lv'+(c.lv||'—')+'｜'+(c.date||'—'),'30px '+PF,50,'#8a7a55',22);
+    c.text.split(/\n+/).forEach(t=>putT(t,'46px '+PF,74,'#2a2114',20));y+=40}
+  fin();
+  const note=()=>{const c=document.createElement('canvas');c.width=Math.round(PW*SC);c.height=Math.round(PH*SC);const x=c.getContext('2d');x.scale(SC,SC);x.fillStyle='#f6f0e0';x.fillRect(0,0,PW,PH);x.fillStyle='#8a7a55';x.font='bold 46px '+PF;x.fillText('— 筆記 —',pm,pm+50);x.strokeStyle='#cfc2a0';x.lineWidth=2;for(let i=0;i<20;i++){x.beginPath();x.moveTo(pm,pm+150+i*68);x.lineTo(PW-pm,pm+150+i*68);x.stroke()}return{u:c.toDataURL('image/jpeg',.9),ch:[]}};
+  const V=Math.max(1,Math.ceil(pg.length/6)),shp=[],pickS=()=>{if(!shp.length)shp.push(...nvShots);return shp.length?shp.splice(Math.floor(Math.random()*shp.length),1)[0]:null};
+  const pw=Math.round(PW*SC),ph=Math.round(PH*SC),QW=pw*4,QH=ph*2,sheets=[],LAY=[[5,4,3,2],[6,7,8,1]];
+  const blank=()=>{const c=document.createElement('canvas');c.width=QW;c.height=QH;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,QW,QH);return c};
+  const wrap=(x,t,mx)=>{const o=[];let a='';for(const ch of t){if(x.measureText(a+ch).width>mx&&a){o.push(a);a=ch}else a+=ch}if(a)o.push(a);return o};
+  {const c=blank(),x=c.getContext('2d'),mx=QW-240;x.textAlign='left';x.fillStyle='#2a2114';x.font='bold 62px '+PF;x.fillText('摺頁小冊說明：一張 A4 摺成 8 頁',120,170);
+   x.font='36px '+PF;let yy=270;
+   ['共 '+V+' 本，每本一張紙。從 PDF 第 2 頁開始印，第 1 頁（本頁）不用印。','列印設定：A4、橫向、實際大小（不要選「縮放」或「符合頁面」）、單面。','1. 字面朝上，左右對折（兩短邊對齊）壓出折線後展開；再把左右兩邊各往中線折，壓出折線後展開（共 4 欄）。','2. 上下對折（兩長邊對齊）壓出折線後展開。折線方向不拘。','3. 左右對折，從折邊沿橫向中線（紅色虛線）剪進去，只剪一格寬，剪到第一條直折線為止，然後展開。紙中央會有兩格寬的剪口。','4. 沿橫向中線上下對折，字面朝外，剪口落在折邊上。兩手捏住左右兩端往中間推，剪口會撐成菱形。','5. 繼續推，直到四片葉子疊成十字，壓平成冊。封面在最上面，從第 2 頁依序往後翻。'].forEach(t=>{wrap(x,t,mx).forEach(l=>{x.fillText(l,120,yy);yy+=62});yy+=22});
+   const dx=120,dy=yy+60,cw=190,ch=269;x.font='bold 30px '+PF;x.fillStyle='#8a7a55';x.fillText('頁序示意（上排倒置，正好是印出來的樣子）',dx,dy-24);
+   x.strokeStyle='#8a7a55';x.lineWidth=2;x.setLineDash([]);LAY.forEach((row,r)=>row.forEach((n,k)=>{x.save();x.translate(dx+k*cw+cw/2,dy+r*ch+ch/2);if(r==0)x.rotate(Math.PI);x.strokeRect(-cw/2,-ch/2,cw,ch);x.fillStyle='#b5780b';x.font='bold 80px '+PF;x.textAlign='center';x.textBaseline='middle';x.fillText(String(n),0,0);x.restore()}));
+   x.strokeStyle='#d33';x.lineWidth=5;x.beginPath();x.moveTo(dx+cw,dy+ch);x.lineTo(dx+3*cw,dy+ch);x.stroke();
+   sheets.push(c.toDataURL('image/jpeg',.82))}
+  const names=party.map(p=>NVN[p.n]).join('・');
+  for(let v=0;v<V;v++){const ps=pg.slice(v*6,v*6+6);while(ps.length<6)ps.push(note());
+    const nums=ps.flatMap(q=>q.ch),lo=nums.length?Math.min(...nums):0,hi=nums.length?Math.max(...nums):0;
+    const front=await nvCover(NVT,['卷 '+(v+1)+' / '+V+(nums.length?'・第 '+lo+(hi>lo?'–'+hi:'')+' 集':''),nvLead()],pickS()),back=await nvCover('— 卷終 —',['隊伍・'+names,'平均等級・Lv'+avgLv()],pickS());
+    const im=await Promise.all(ps.map(q=>nvLi(q.u))),P2={1:front,8:back};im.forEach((m,i)=>{P2[i+2]=m});
+    const c=blank(),x=c.getContext('2d');
+    LAY.forEach((row,r)=>row.forEach((n,k)=>{x.save();x.translate(k*pw+pw/2,r*ph+ph/2);if(r==0)x.rotate(Math.PI);if(P2[n])x.drawImage(P2[n],-pw/2,-ph/2,pw,ph);if(n>1&&n<8){x.fillStyle='#8a7a55';x.font='24px '+PF;x.textAlign='center';x.fillText('— '+n+' —',0,ph/2-24)}x.restore()}));
+    x.strokeStyle='rgba(120,120,120,.4)';x.lineWidth=2;x.setLineDash([10,10]);x.beginPath();[1,2,3].forEach(i=>{x.moveTo(i*pw,0);x.lineTo(i*pw,QH)});x.moveTo(0,ph);x.lineTo(pw,ph);x.moveTo(3*pw,ph);x.lineTo(QW,ph);x.stroke();
+    x.strokeStyle='#d33';x.lineWidth=4;x.setLineDash([16,10]);x.beginPath();x.moveTo(pw,ph);x.lineTo(3*pw,ph);x.stroke();x.setLineDash([]);
+    x.fillStyle='#d33';x.font='bold 22px '+PF;x.textAlign='center';x.fillText('剪開（只剪紅線這一段）',2*pw,ph-10);
+    sheets.push(c.toDataURL('image/jpeg',.85))}
+  const doc=new J({unit:'mm',format:'a4',orientation:'landscape',compress:true});sheets.forEach((u,i)=>{if(i)doc.addPage('a4','landscape');doc.addImage(u,'JPEG',0,0,297,210)});
+  await nvSave(NVT+'摺頁小冊.pdf',doc.output('blob'));toast('🖨️ 共 '+V+' 本摺頁小冊，PDF 已準備好。')}
 
 function rs(){const w=view.clientWidth,h=view.clientHeight;if(w&&h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}
 new ResizeObserver(rs).observe(view);rs();
@@ -758,7 +936,7 @@ function tick(t){requestAnimationFrame(tick);
   mons.forEach(m=>put(m.s,m.x,(m.boss?.5:.42)+Math.sin(t/300+m.x)*.03,m.y));
   npcs.forEach(n=>{if(!n.s)return;if(!n.st&&t>n.nx&&t>n.t0+1400){n.nx=t+1500+Math.random()*3000;const [dx,dy]=DIRS[r(0,3)],x=n.x+dx,y=n.y+dy;if(!g[y][x]&&Math.abs(x-n.home[0])+Math.abs(y-n.home[1])<=2&&!(x===P.x&&y===P.y)&&!npcs.some(o=>o!==n&&o.x===x&&o.y===y)){n.fx=n.x;n.fy=n.y;n.x=x;n.y=y;n.t0=t;if(dx)n.fl=dx}}const k0=Math.min(1,(t-n.t0)/1400),k=k0*k0*(3-2*k0);put(n.s,n.fx+(n.x-n.fx)*k,.25,n.fy+(n.y-n.fy)*k);n.s.scale.x=.5;if(n.ic){const f=n.s.userData.f;put(n.ic,f[0],.62,f[2])}});
   items.forEach(i=>{if(i.k==='down'||i.k==='merchant'||i.k==='shrine')put(i.s,i.x,.45+Math.sin(t/400+i.x)*.04,i.y)});
-  renderer.render(scene,camera)}
+  renderer.render(scene,camera);if(wantShot)nvShot()}
 window.__dbg={get S(){return{gold,party,camp,combat,area,FL,P,over,menu,mons,items,deep,quest,dex,ach,AR,inv,cons,ng,won}},act,move,A,applySave,snap,startCombat,gainXp,victory,build,go,newGame,ui,pick,mkItem,giveItem,defeat,endContinue,newGamePlus,sfx,tpl,setLv};
 newGame();requestAnimationFrame(tick);
 {const a=lsGet(AUTO);if(a)try{const d=JSON.parse(a);if(valid(d))menuOpen(`📂 發現自動存檔<br><small>${summary(d)}<br>選「離開」將開始新遊戲</small>`,[['📂 繼續上次進度',()=>{closeMenu();loadSlot(AUTO)}]]);else if(!set.seen){set.seen=1;saveSet();helpMenu(0)}}catch(e){}else if(!set.seen){set.seen=1;saveSet();helpMenu(0)}}
