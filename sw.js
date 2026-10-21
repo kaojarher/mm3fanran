@@ -1,6 +1,6 @@
 // Service Worker：離線快取。更新遊戲內容後請把 VERSION 加 1，已安裝的裝置就會更新。
-const VERSION='fr-v2';
-const FILES=['./','./index.html','./three.min.js','./jspdf.umd.min.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-maskable-512.png','./apple-touch-icon.png'];
+const VERSION='fr-v3';
+const FILES=['./','./index.html','./three-lite.js','./jspdf.umd.min.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-maskable-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{

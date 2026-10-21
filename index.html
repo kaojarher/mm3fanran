@@ -23,10 +23,10 @@ body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Not
 #app{height:100%;height:100dvh;display:flex;flex-direction:column}
 #view{position:relative;flex:1;min-height:0;background:#000}
 #gl{width:100%;height:100%;display:block}
-#info{position:absolute;left:8px;top:8px;background:#000a;color:#f3e2b0;padding:4px 9px;border-radius:8px;font-size:clamp(13px,2.2vmin,18px);line-height:1.5}
-#mini{position:absolute;right:8px;top:8px;width:clamp(84px,12vmin,150px);height:clamp(84px,12vmin,150px);background:#000a;border-radius:6px;image-rendering:pixelated}
-#log{position:absolute;left:10px;right:10px;bottom:6px;font-size:clamp(13px,2.2vmin,18px);color:#f6e7b8;text-shadow:0 1px 3px #000,0 0 6px #000;pointer-events:none}
-#end,#menu{position:absolute;inset:0;display:grid;place-items:center;background:#000d;color:#f3e2b0;text-align:center;padding:12px}
+#info{position:absolute;left:8px;top:8px;background:#000a;color:#f3e2b0;padding:4px 9px;border-radius:8px;font-size:max(13px,min(2.2vmin,18px));line-height:1.5}
+#mini{position:absolute;right:8px;top:8px;width:max(84px,min(12vmin,150px));height:max(84px,min(12vmin,150px));background:#000a;border-radius:6px;image-rendering:pixelated}
+#log{position:absolute;left:10px;right:10px;bottom:6px;font-size:max(13px,min(2.2vmin,18px));color:#f6e7b8;text-shadow:0 1px 3px #000,0 0 6px #000;pointer-events:none}
+#end,#menu{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;background:#000d;color:#f3e2b0;text-align:center;padding:12px}
 #end h2{font-size:28px;margin:0 0 8px}
 #menu>div{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;width:min(380px,100%);display:grid;gap:8px;max-height:100%;overflow:auto;text-align:left}
 #menu h3{margin:0;font-size:17px}
@@ -43,7 +43,7 @@ button:disabled{opacity:.4}
 button{min-height:46px;font-size:18px;font-family:inherit;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);cursor:pointer}
 button:active:not(:disabled){background:var(--accent);color:#000}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#fight{--es:clamp(64px,min(21vw,15vh),140px);position:absolute;left:0;right:0;bottom:0;display:grid;align-items:end;grid-template-columns:repeat(4,1fr);gap:2px 6px;padding:0 6px 6px;pointer-events:none}
+#fight{--es:max(64px,min(min(21vw,15vh),140px));position:absolute;left:0;right:0;bottom:0;display:grid;align-items:end;grid-template-columns:repeat(4,1fr);gap:2px 6px;padding:0 6px 6px;pointer-events:none}
 #fight .u{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-width:0}
 #fight .e{text-align:center;font-size:var(--es);line-height:1.1;transform-origin:50% 100%;transition:transform .25s;filter:drop-shadow(0 3px 3px #000a)}
 #fight .u.bk .e{font-size:calc(var(--es)*.72)}
@@ -55,8 +55,8 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #fight .card b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #fight .card span{white-space:nowrap}
 #app.cmb #party{display:none}
-#fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.pop{position:absolute;font:900 clamp(24px,5.5vmin,40px)/1 Arial,"Noto Sans TC",sans-serif;opacity:0;white-space:nowrap;animation:popup 1.1s ease-out both}
+#fx{position:absolute;top:0;right:0;bottom:0;left:0;pointer-events:none;overflow:hidden}
+.pop{position:absolute;font:900 max(24px,min(5.5vmin,40px))/1 Arial,"Noto Sans TC",sans-serif;opacity:0;white-space:nowrap;animation:popup 1.1s ease-out both}
 .pop.hurt{color:#ff3b3b;text-shadow:-2px 0 #fff,2px 0 #fff,0 -2px #fff,0 2px #fff,0 4px 5px #000}
 .pop.hit{color:#fff;text-shadow:-2px 0 #000,2px 0 #000,0 -2px #000,0 2px #000,0 4px 5px #000}
 .pop.heal{color:#6bff72;text-shadow:-2px 0 #063,2px 0 #063,0 -2px #063,0 2px #063,0 4px 5px #000}
@@ -64,10 +64,10 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @keyframes lunge{0%,100%{transform:none}35%,60%{transform:translate(var(--dx,0px),var(--dy,-120px)) scale(.45)}}
 @keyframes shk{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
 
-#foes{position:absolute;left:0;right:0;top:56px;display:flex;justify-content:center;align-items:flex-end;gap:clamp(4px,1.5vw,16px);padding:0 6px;pointer-events:none}
-#foes .fo{pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;width:clamp(84px,27vw,170px);transition:opacity .4s}
-#foes .fe{font-size:clamp(46px,min(15vw,11vh),104px);line-height:1.1;filter:drop-shadow(0 3px 3px #000a);transform-origin:50% 100%}
-#foes .fe.boss{font-size:clamp(64px,min(21vw,15vh),140px)}
+#foes{position:absolute;left:0;right:0;top:56px;display:flex;justify-content:center;align-items:flex-end;gap:max(4px,min(1.5vw,16px));padding:0 6px;pointer-events:none}
+#foes .fo{pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;width:max(84px,min(27vw,170px));transition:opacity .4s}
+#foes .fe{font-size:max(46px,min(min(15vw,11vh),104px));line-height:1.1;filter:drop-shadow(0 3px 3px #000a);transform-origin:50% 100%}
+#foes .fe.boss{font-size:max(64px,min(min(21vw,15vh),140px))}
 #foes .fe.fatk{animation:flunge .55s}
 #foes .fe.hit{animation:shk .3s;filter:drop-shadow(0 0 8px #f33)}
 #foes .card{width:100%;padding:3px 5px;font-size:11px;gap:2px;background:var(--panel);color:var(--ink);box-shadow:0 2px 6px #0008}
@@ -78,7 +78,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @keyframes bob{to{transform:translateY(5px)}}
 @keyframes flunge{0%,100%{transform:none}35%,60%{transform:translate(var(--dx,0px),var(--dy,120px)) scale(1.35)}}
 #view.fight #mini,#view.fight #fs{display:none}
-.pop.crit{color:#ffe14a;font-size:clamp(32px,7vmin,52px);text-shadow:-2px 0 #a30,2px 0 #a30,0 -2px #a30,0 2px #a30,0 4px 5px #000}
+.pop.crit{color:#ffe14a;font-size:max(32px,min(7vmin,52px));text-shadow:-2px 0 #a30,2px 0 #a30,0 -2px #a30,0 2px #a30,0 4px 5px #000}
 .pop.psn{color:#c58bff;text-shadow:-2px 0 #302,2px 0 #302,0 -2px #302,0 2px #302}
 .toast{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#000d;color:#ffd24a;border:1px solid #ffd24a;padding:6px 14px;border-radius:14px;font-size:14px;max-width:92%;text-align:center;line-height:1.5;z-index:5;pointer-events:none;animation:tin .3s}
 @keyframes tin{from{opacity:0;top:-10px}}
@@ -89,10 +89,10 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 #view .card,#party .card{--bh:7px}
 .br{display:flex;align-items:center;gap:4px}.br i{flex:1;height:7px}.br em{font-style:normal;font-size:10px;line-height:1;white-space:nowrap;min-width:3.4em;text-align:right;font-variant-numeric:tabular-nums}
 #menu small{opacity:.8;font-weight:normal;line-height:1.5}
-.th{position:absolute;bottom:8px;font-size:clamp(28px,6vmin,44px);color:#fff;opacity:.28;pointer-events:none;text-shadow:0 1px 4px #000}.th.l{left:12px}.th.r{right:12px}#view.fight .th{display:none}
-#fs{position:absolute;right:8px;top:calc(clamp(84px,12vmin,150px) + 16px);width:40px;min-height:40px;padding:0;font-size:18px;opacity:.85}
+.th{position:absolute;bottom:8px;font-size:max(28px,min(6vmin,44px));color:#fff;opacity:.28;pointer-events:none;text-shadow:0 1px 4px #000}.th.l{left:12px}.th.r{right:12px}#view.fight .th{display:none}
+#fs{position:absolute;right:8px;top:calc(max(84px,min(12vmin,150px)) + 16px);width:40px;min-height:40px;padding:0;font-size:18px;opacity:.85}
 @media (min-aspect-ratio:6/5) and (min-width:700px){
-#app{display:grid;grid-template-columns:minmax(0,1fr) clamp(320px,30vw,440px);grid-template-rows:minmax(0,1fr) auto}
+#app{display:grid;grid-template-columns:minmax(0,1fr) max(320px,min(30vw,440px));grid-template-rows:minmax(0,1fr) auto}
 #view{grid-column:1;grid-row:1/3}
 #party{grid-column:2;grid-row:1;align-content:start;overflow:auto;border-top:0;border-left:1px solid var(--line)}
 #ctrl{grid-column:2;grid-row:2;border-left:1px solid var(--line)}
@@ -117,7 +117,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     <div id="cb" hidden><button data-k="atk">⚔️ 攻擊</button><button data-k="sk" id="sk">🔮 神通</button><button data-k="def">🛡️ 防禦</button><button data-k="item">🧪 道具</button><button data-k="run">🏃 遁走</button></div>
   </div>
 </div>
-<script src="./three.min.js"></script>
+<script src="./three-lite.js"></script>
 <script src="./jspdf.umd.min.js"></script>
 <script src="https://js.puter.com/v2/"></script>
 <script>
@@ -483,7 +483,7 @@ function act(t){
   else if(t==='def'){a.guard=1;a.mp=Math.min(a.mmp,a.mp+2);say(`🛡️ ${a.n} 運起護體靈氣（受傷減半，靈力+2）。`);sfx('click');afterAct()}
   else if(t==='item'){itemMenu(true)}
   else if(t==='run'){const sp=alive(party).reduce((s,p)=>s+p.sp,0)/alive(party).length,fs=combat.foes.reduce((s,f)=>s+f.spd,0)/combat.foes.length,boss=combat.foes.some(f=>f.boss);
-    if(Math.random()<(boss?.25:clamp(.4+(sp-fs)*.05,.15,.85))){combat.foes.forEach(f=>{if(f.s)f.s.visible=true});combat=null;nt('flee');say('🏃 成功遁走。');ui()}else{say('🏃 遁走失敗！');afterAct()}}}
+    if(Math.random()<(boss?.25:max(.4+(sp-fs)*.05,min(.15,.85)))){combat.foes.forEach(f=>{if(f.s)f.s.visible=true});combat=null;nt('flee');say('🏃 成功遁走。');ui()}else{say('🏃 遁走失敗！');afterAct()}}}
 function victory(){
   const c=combat,foes=c.foes,rich=AR[K(area,FL)]&&AR[K(area,FL)].mod,df=dfc();
   const gm=(rich==='rich'?1.5:1)*df.r*(1+.25*ng);let gg=0,xpT=0;
@@ -550,7 +550,7 @@ function musicTick(){if(!set.mus||!AC||AC.state!=='running'||document.hidden)ret
   tone(sc[mi%sc.length],m==='fight'?.22:.5,m==='town'?'triangle':'sine',m==='fight'?.035:.028);if(mi%4===0&&m!=='fight')tone(sc[0]/2,1.4,'sine',.03)}
 function startMusic(){clearInterval(musT);musT=setInterval(musicTick,combat?260:520)}
 let lastMus=0;setInterval(()=>{const m=combat?1:2;if(m!==lastMus){lastMus=m;startMusic()}},400);
-['pointerdown','keydown'].forEach(e=>addEventListener(e,()=>ac(),{once:true}));
+['pointerdown','touchstart','mousedown','keydown'].forEach(e=>addEventListener(e,()=>ac(),{once:true}));
 
 // ===== 任務 / 成就 / 圖鑑 =====
 function genOffers(){const o=[],names=[...ALLSP.filter(n=>n!==MIMIC[1]&&!Object.values(BOSS).flat().some(b=>b[1]===n))],lv=avgLv();
@@ -663,7 +663,7 @@ function findPath(tx,ty,exact){
   const path=[];let c=best;while(c&&!(c[0]===P.x&&c[1]===P.y)){path.unshift(c);c=prev.get(key(c[0],c[1]))}
   return path}
 function groundCell(pt,dir){const p=pt.clone().addScaledVector(dir,-.3),l=world.worldToLocal(p);
-  if(theme.pl){const pl=theme.pl,R=Math.hypot(l.x,l.y,l.z),b=Math.asin(clamp(l.z/R,-1,1)),a=Math.atan2(l.x,l.y);return[Math.round(a*pl+(W-1)/2),Math.round(b*pl+(H-1)/2)]}
+  if(theme.pl){const pl=theme.pl,R=Math.hypot(l.x,l.y,l.z),b=Math.asin(max(l.z/R,min(-1,1))),a=Math.atan2(l.x,l.y);return[Math.round(a*pl+(W-1)/2),Math.round(b*pl+(H-1)/2)]}
   return[Math.round(l.x),Math.round(l.z)]}
 function onTap(cx,cy){
   const rc=$('#gl').getBoundingClientRect(),fx=(cx-rc.left)/rc.width,fy=(cy-rc.top)/rc.height;
@@ -676,7 +676,7 @@ function onTap(cx,cy){
     if(e=items.find(i=>i.s===o&&i.s.visible)){tx=e.x;ty=e.y;ent=true;break}
     if(o.isMesh){[tx,ty]=groundCell(h.point,ray.ray.direction);break}}
   if(tx===null)return;
-  tx=clamp(tx,0,W-1);ty=clamp(ty,0,H-1);if(tx===P.x&&ty===P.y)return;
+  tx=max(tx,min(0,W-1));ty=max(ty,min(0,H-1));if(tx===P.x&&ty===P.y)return;
   let path=findPath(tx,ty,ent);if(!path&&ent)path=findPath(tx,ty,false);
   if(!path||!path.length){if(ent){say('🚫 走不到那裡。')}return}
   cancelWalk();const end=path[path.length-1];
@@ -692,8 +692,10 @@ setInterval(()=>{if(!walk)return;
   if(P.d!==d){const df=(d-P.d+4)%4;turn(df===3?-1:1);return}
   const k0=walk.key;move('f');
   if(walk&&k0===K(area,FL)&&P.x===nx[0]&&P.y===nx[1]){walk.path.shift();if(!walk.path.length)cancelWalk()}else cancelWalk()},50);
-{let pd=null;const gl=$('#gl');gl.addEventListener('pointerdown',e=>{pd={x:e.clientX,y:e.clientY}});
- gl.addEventListener('pointerup',e=>{if(!pd)return;const m=Math.hypot(e.clientX-pd.x,e.clientY-pd.y);pd=null;if(m>10||over||combat||menu)return;onTap(e.clientX,e.clientY)})}
+{let pd=null;const gl=$('#gl');const pt0=e=>e.changedTouches&&e.changedTouches[0]||e.touches&&e.touches[0]||e;
+ const dn=e=>{const t=pt0(e);pd={x:t.clientX,y:t.clientY}},up=e=>{if(!pd)return;const t=pt0(e),m=Math.hypot(t.clientX-pd.x,t.clientY-pd.y);pd=null;if(m>10||over||combat||menu)return;onTap(t.clientX,t.clientY)};
+ if(window.PointerEvent){gl.addEventListener('pointerdown',dn);gl.addEventListener('pointerup',up)}else{gl.addEventListener('touchstart',dn,{passive:true});gl.addEventListener('touchend',e=>{e.preventDefault();up(e)},{passive:false});gl.addEventListener('mousedown',dn);gl.addEventListener('mouseup',up)}
+ }
 
 // ===== PWA 安裝 =====
 let deferredPrompt=null;
@@ -849,7 +851,7 @@ function nvMenu(){const act=nvAct(nev);
     ['↩️ 返回手冊',bookMenu]])}
 let nvI=0;
 function nvReader(i){if(!novel.length){nvMenu();return}
-  nvI=i==null?novel.length-1:clamp(i,0,novel.length-1);const c=novel[nvI];
+  nvI=i==null?novel.length-1:max(i,min(0,novel.length-1));const c=novel[nvI];
   menuOpen(`<b>第 ${c.n} 集：${esc(c.title)}</b> <small>（${nvI+1}/${novel.length}）${c.ai?'':'｜範本'}</small>`,[
     ['⬅️ 上一集',()=>nvReader(nvI-1),nvI<=0],['➡️ 下一集',()=>nvReader(nvI+1),nvI>=novel.length-1],
     [c.ev?'🔁 用 AI 重寫本集':'🔁 無法重寫（缺少紀錄）',()=>nvRewrite(nvI),!c.ev],
@@ -929,7 +931,7 @@ async function nvPdf(){const J=window.jspdf&&window.jspdf.jsPDF;if(!J){say('PDF 
   await nvSave(NVT+'摺頁小冊.pdf',doc.output('blob'));toast('🖨️ 共 '+V+' 本摺頁小冊，PDF 已準備好。')}
 
 function rs(){const w=view.clientWidth,h=view.clientHeight;if(w&&h){renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}}
-new ResizeObserver(rs).observe(view);rs();
+if(window.ResizeObserver)new ResizeObserver(rs).observe(view);addEventListener('resize',rs);addEventListener('orientationchange',()=>setTimeout(rs,300));rs();
 function tick(t){requestAnimationFrame(tick);
   vx+=(tgt.x-vx)*.2;vz+=(tgt.z-vz)*.2;camera.rotation.y+=(tgt.a-camera.rotation.y)*.2;placeCam();
   if(area==='village'){syncCamp(t);syncPortal(t)}torch.intensity=theme.torch+Math.sin(t/90)*.07+Math.random()*.04;

@@ -18,7 +18,7 @@ PWA 必須透過 https 網址開啟才能安裝（直接雙擊 index.html 只能
 【檔案】
 index.html            遊戲本體
 jspdf.umd.min.js      PDF 摺頁小冊用（已內建，離線可用）
-three.min.js          3D 引擎（已內建，離線可用）
+three-lite.js         相容 iPhone 6 的 2D 繪圖層（取代 three.js，不需 WebGL）
 manifest.webmanifest  App 資訊
 sw.js                 離線快取
 icon-*.png            圖示（🧝，未更動）
